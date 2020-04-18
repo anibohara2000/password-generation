@@ -22,9 +22,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         return ([batch_x, batch_y], batch_x)
 
 def on_epoch_end(epoch, _):
-    epoch += 1
     if epoch % 10 == 0:
-        model.save_weights('e{:0>3d}_weights.h5'.format(epoch))
+        vae.save_weights('e{:0>3d}_weights.h5'.format(epoch))
 
 def one_hot_encoding(batch_input):
     batch_size = len(batch_input)
@@ -113,13 +112,13 @@ if __name__ == '__main__':
     np.random.seed(42)
     
     data = []
-    with open('rockyou-processed.txt', 'r') as f:
+    with open('../rockyou-processed.txt', 'r') as f:
         data = f.readlines()
         data = [w.strip() for w in data]
 
     VOCAB_SIZE = 128
     MAX_WORD_LEN = 50
-    BATCH_SIZE = 32
+    BATCH_SIZE = 128
     INPUT_DIM = VOCAB_SIZE + 2
     INTERMEDIATE_DIM = 512
     LATENT_DIM = 256
@@ -129,5 +128,5 @@ if __name__ == '__main__':
 
     training_data_generator = DataGenerator(data[:TRAINING_DATA_SIZE], BATCH_SIZE)
     callback = LambdaCallback(on_epoch_end=on_epoch_end)
-    vae.fit(training_data_generator, epochs=1000, callbacks=[callback], verbose=1)
+    history = vae.fit(training_data_generator, epochs=1000, callbacks=[callback], verbose=1)
 

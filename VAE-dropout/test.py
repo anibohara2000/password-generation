@@ -175,7 +175,7 @@ def create_model():
 
     optimizer = RMSprop(learning_rate=0.001)
     vae.compile(optimizer=optimizer, loss=vae_loss)
-    # vae.summary()
+    vae.summary()
     return vae, encoder, generator, stepper
 
 if __name__ == '__main__':
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     data = []
-    with open('../rockyou-processed.txt', 'r') as f: 
+    with open('rockyou-processed.txt', 'r') as f:
         data = f.readlines()
         data = [w.strip() for w in data]
 
@@ -200,4 +200,3 @@ if __name__ == '__main__':
 
     vae, encoder, generator, stepper = create_model()
     vae.load_weights(args.weights)
-    print("Weights loaded")
