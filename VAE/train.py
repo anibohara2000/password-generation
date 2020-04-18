@@ -98,7 +98,7 @@ def create_model():
     stepper = Model([decoder_words_input, input_h, input_c], [__decoded_onehot, __decoded_h, __decoded_c])
 
     def vae_loss(x, x_decoded_onehot):
-        xent_loss = K.categorical_crossentropy(x, x_decoded_onehot)
+        xent_loss = categorical_crossentropy(x, x_decoded_onehot)
         kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma))
         loss = xent_loss + kl_loss
         return loss
@@ -128,5 +128,5 @@ if __name__ == '__main__':
 
     training_data_generator = DataGenerator(data[:TRAINING_DATA_SIZE], BATCH_SIZE)
     callback = LambdaCallback(on_epoch_end=on_epoch_end)
-    history = vae.fit(training_data_generator, epochs=1000, callbacks=[callback], verbose=1)
+    history = vae.fit(training_data_generator, epochs=500, callbacks=[callback], verbose=1)
 
