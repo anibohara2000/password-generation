@@ -4,11 +4,20 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, LSTM, Input, Lambda, RepeatVector, TimeDistributed
-from tensorflow.keras.optimizers import RMSprop, Adam
-from tensorflow.keras.callbacks import LambdaCallback
+from tensorflow.keras.optimizers import RMSprop, Adam, Nadam
+from tensorflow.keras.callbacks import LambdaCallback, CSVLogger, LearningRateScheduler
 import math
 from tensorflow.keras import backend as K
 from tensorflow.keras.losses import categorical_crossentropy
+import argparse
+
+VOCAB_SIZE = 128
+MAX_WORD_LEN = 50
+BATCH_SIZE = 128
+INPUT_DIM = VOCAB_SIZE + 2
+INTERMEDIATE_DIM = 512
+LATENT_DIM = 256
+TRAINING_DATA_SIZE = 10000
 
 class DataGenerator(tf.keras.utils.Sequence):
     def __init__(self, data, batch_size):
@@ -21,9 +30,20 @@ class DataGenerator(tf.keras.utils.Sequence):
         batch_x, batch_y = one_hot_encoding(batch_data)
         return ([batch_x, batch_y], batch_x)
 
+def scheduler(epoch):
+    if epoch == 0:
+        return 0.01
+    last_loss = 0.0
+    with open('training.log', 'r') as f:
+        last_loss = float(f.readlines()[-1].strip().split(',')[-1])
+    if last_loss < 1.0:
+        return 0.01
+    else:
+        return 0.001
+
 def on_epoch_end(epoch, _):
-    if epoch % 10 == 0:
-        vae.save_weights('e{:0>3d}_weights.h5'.format(epoch))
+    # if epoch % 10 == 0:
+    vae.save_weights('e{:0>3d}_weights.h5'.format(epoch))
 
 def one_hot_encoding(batch_input):
     batch_size = len(batch_input)
@@ -63,8 +83,10 @@ def create_model():
     # so you could write `Lambda(sampling)([z_mean, z_log_sigma])`
     z = Lambda(sampling, output_shape=(LATENT_DIM,))([z_mean, z_log_sigma])
 
-    z_reweighting = Dense(units=INTERMEDIATE_DIM, activation="linear")
-    z_reweighted = z_reweighting(z)
+    z_reweighting_h = Dense(units=INTERMEDIATE_DIM, activation="linear")
+    z_reweighting_c = Dense(units=INTERMEDIATE_DIM, activation="linear")
+    z_reweighted_h = z_reweighting_h(z)
+    z_reweighted_c = z_reweighting_c(z)
 
     # "next-word" data for prediction
     decoder_words_input = Input(shape=(None, INPUT_DIM,))
@@ -73,7 +95,7 @@ def create_model():
     decoder_h = LSTM(INTERMEDIATE_DIM, return_sequences=True, return_state=True, input_shape=(None, INPUT_DIM))
 
     # todo: not sure if this initialization is correct
-    h_decoded, _, _ = decoder_h(decoder_words_input, initial_state=[z_reweighted, z_reweighted])
+    h_decoded, _, _ = decoder_h(decoder_words_input, initial_state=[z_reweighted_h, z_reweighted_c])
     decoder_dense = TimeDistributed(Dense(INPUT_DIM, activation="softmax"))
     decoded_onehot = decoder_dense(h_decoded)
 
@@ -85,8 +107,9 @@ def create_model():
 
     # generator, from latent space to reconstructed inputs -- for inference's first step
     decoder_state_input = Input(shape=(LATENT_DIM,))
-    _z_rewighted = z_reweighting(decoder_state_input)
-    _h_decoded, _decoded_h, _decoded_c = decoder_h(decoder_words_input, initial_state=[_z_rewighted, _z_rewighted])
+    _z_rewighted_h = z_reweighting_h(decoder_state_input)
+    _z_rewighted_c = z_reweighting_c(decoder_state_input)
+    _h_decoded, _decoded_h, _decoded_c = decoder_h(decoder_words_input, initial_state=[_z_rewighted_h, _z_rewighted_c])
     _decoded_onehot = decoder_dense(_h_decoded)
     generator = Model([decoder_words_input, decoder_state_input], [_decoded_onehot, _decoded_h, _decoded_c])
 
@@ -103,30 +126,36 @@ def create_model():
         loss = xent_loss + kl_loss
         return loss
 
-    optimizer = RMSprop(learning_rate=0.001)
+    optimizer = Adam(learning_rate=0.001)
     vae.compile(optimizer=optimizer, loss=vae_loss)
     vae.summary()
     return vae, encoder, generator, stepper
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', '-w', help='Weights file if to start training from this')
+    parser.add_argument('--initial_epoch', '-i', help='Number of epochs already done if weights file provided', type=int)
+    args = parser.parse_args()
+
     np.random.seed(42)
+    tf.set_random_seed(42)
+
     
     data = []
     with open('../rockyou-processed.txt', 'r') as f:
         data = f.readlines()
         data = [w.strip() for w in data]
 
-    VOCAB_SIZE = 128
-    MAX_WORD_LEN = 50
-    BATCH_SIZE = 128
-    INPUT_DIM = VOCAB_SIZE + 2
-    INTERMEDIATE_DIM = 512
-    LATENT_DIM = 256
-    TRAINING_DATA_SIZE = 10000
-    
     vae, encoder, generator, stepper = create_model()
 
     training_data_generator = DataGenerator(data[:TRAINING_DATA_SIZE], BATCH_SIZE)
     callback = LambdaCallback(on_epoch_end=on_epoch_end)
-    history = vae.fit(training_data_generator, epochs=500, callbacks=[callback], verbose=1)
-
+    csv_logger = CSVLogger('training.log')
+    lr_scheduler = LearningRateScheduler(scheduler, verbose=1)
+    if args.weights is not None:
+        history = vae.load_weights(args.weights)
+        assert args.initial_epoch is not None
+        history = vae.fit(training_data_generator, epochs=500, callbacks=[callback, csv_logger], verbose=1, initial_epoch=args.initial_epoch)
+    else:
+        history = vae.fit(training_data_generator, epochs=500, callbacks=[callback, csv_logger], verbose=1)
+    
