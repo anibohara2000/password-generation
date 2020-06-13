@@ -61,8 +61,8 @@ def create_model():
 
     model = Model(inputs=inputs, outputs=outputs)
 
-    # optimizer = RMSprop(learning_rate=0.0001)
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+    optimizer = RMSprop(learning_rate=0.01)
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer)
     model.summary()
     return model
 
