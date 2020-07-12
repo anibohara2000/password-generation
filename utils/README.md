@@ -8,12 +8,12 @@ To get the memorability, run the following commands in the folder:
 
 ```
 python3 memorability.py --pwd=Password % Check memorability score of "Password"
-python3 memorability.py --file=filename % Check memorability score of passwords contained in the file filename
+python3 memorability.py --file=filename % Check memorability score of passwords contained in the file "filename"
 ```
 
 ## Guessability
 
-To run the code to generate guessability scores, apache2 server is required. Install it using the following commands:
+The code for the guessability is taken from <a href="https://github.com/cupslab/password_meter">here</a>. To run the code to generate guessability scores, apache2 server is required. Install it using the following commands:
 
 ```
 sudo apt-get update
@@ -36,7 +36,7 @@ To get the guessability, run the following commands in the folder:
 
 ```
 python3 guessability.py --pwd=Password % Check guessability score of "Password"
-python3 guessability.py --file=filename % Check guessability score of passwords contained in the file filename
+python3 guessability.py --file=filename % Check guessability score of passwords contained in the file "filename"
 ```
 
 After running the code for all files, stop the apache server using the command:
