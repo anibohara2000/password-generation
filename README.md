@@ -3,6 +3,7 @@ Password Generation
 
 ## Acknowledgement
 
+<<<<<<< HEAD
 This project was done under the supervision of Prof. <a href="https://abir-de.github.io">Abir De</a>, IIT Bombay. This was a reseaarch and development project and the final report for the same can also be found [here](RnD_Report.pdf).
 
 ## Metrics
