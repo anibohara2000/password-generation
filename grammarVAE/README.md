@@ -26,7 +26,7 @@ The file molecule_vae.py can be used to encode and decode SMILES strings. For a 
 
 ```
 python encode_decode_zinc.py
-python encode_decode_zinc.py --latent_dim=2 --epochs=50 --num_samples=200 % Sample 200 random strings from the model trained with a 2D latent space and 50 epochs
+python encode_decode_zinc.py --latent_dim=2 --epochs=50 --num_samples=200 % sample 200 random strings from the model trained with a 2D latent space and 50 epochs
 ```
 
 ## Other details
