@@ -1,3 +1,4 @@
+import statistics
 import sys
 import requests_html as rh
 import argparse
@@ -25,7 +26,8 @@ if __name__ == '__main__':
 		pwds = [args.pwd]
 	scores = []
 	for p in tqdm(pwds):
+		if(p==""):
+			continue
 		scores.append(score(p))
 	print(sum(scores) / len(scores))
-	
-
+	print(statistics.stdev(scores))

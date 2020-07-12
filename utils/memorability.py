@@ -2,6 +2,7 @@ import sys
 import editdistance as ed
 import numpy as np
 import argparse
+import statistics
 from tqdm import tqdm
 
 def score(pwd, words):
@@ -14,8 +15,8 @@ def score(pwd, words):
 
 if __name__ == '__main__':
 	with open('100k-lower.txt', 'r') as f:
-	    words = f.readlines()
-	    words = [x.rstrip('\n') for x in words]
+		words = f.readlines()
+		words = [x.rstrip('\n') for x in words]
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-f', '--file', help='File from which to read passwords')
@@ -28,7 +29,9 @@ if __name__ == '__main__':
 		pwds = [args.pwd]
 	scores = []
 	for p in tqdm(pwds):
+		if(p==""):
+			continue
 		s, w = score(p, words)
 		scores.append(s)
 	print(sum(scores) / len(scores))
-	
+	print(statistics.stdev(scores))	
