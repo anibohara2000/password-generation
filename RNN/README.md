@@ -17,7 +17,7 @@ To train the models, modify the hyperparameters in start of train.py if needed, 
 ```
 python train.py
 ```
-The program saves the model weights after each epoch in the file e<EPOCH>\_weights.h5 , where <EPOCH> is the epoch number.
+The program saves the model weights after each epoch in the file e\<EPOCH\>\_weights.h5 , where \<EPOCH\> is the epoch number.
 
 ## Sampling
 
